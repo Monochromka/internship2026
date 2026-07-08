@@ -40,7 +40,7 @@ namespace Projects.Api.Tests
 
             bool isValid = Validator.TryValidateObject(dto, validationContext, validationResults, true);
 
-            Assert.False(isValid); 
+            Assert.False(isValid);
             Assert.Contains(validationResults, v => v.MemberNames.Contains("Name"));
         }
 
@@ -60,6 +60,25 @@ namespace Projects.Api.Tests
 
             Assert.False(isValid);
             Assert.Contains(validationResults, v => v.MemberNames.Contains("Description"));
+        }
+
+
+        [Fact]
+        public void CreateProjectDto_WithEmptyName_ShouldFailValidation()
+        {
+            var dto = new CreateProjectDto
+            {
+                Name = "", 
+                Description = "Valid description"
+            };
+
+            var validationContext = new ValidationContext(dto);
+            var validationResults = new List<ValidationResult>();
+
+            bool isValid = Validator.TryValidateObject(dto, validationContext, validationResults, true);
+
+            Assert.False(isValid); 
+            Assert.Contains(validationResults, v => v.MemberNames.Contains("Name")); 
         }
     }
 }
