@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Projects.Api.Data;
 using Projects.Api.Models;
-
+using Projects.Api.Services;
 
 namespace Projects.Api.Controllers
 {
@@ -10,10 +10,10 @@ namespace Projects.Api.Controllers
     [ApiController]
     public class ProjectsController : ControllerBase
     {
-        private readonly AppDbContext _dbContext;
-        public ProjectsController(AppDbContext dbContext)
+        private readonly IProjectService _projectService;
+        public ProjectsController(IProjectService projectService)
         {
-            _dbContext = dbContext;
+            _projectService = projectService;
         }
 
 
@@ -23,17 +23,7 @@ namespace Projects.Api.Controllers
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateProject([FromBody] CreateProjectDto request)
         {
-            var newProject = new Entities.Project
-            {
-                Id = Guid.NewGuid(),
-                Name = request.Name,
-                Description = request.Description,
-                IsArchived = false,
-                CreatedAt = DateTimeOffset.UtcNow
-            };
-
-            _dbContext.Projects.Add(newProject);
-            await _dbContext.SaveChangesAsync();
+            var newProject = await _projectService.CreateProjectAsync(request);
 
             return Created($"/api/v1/projects/{newProject.Id}", newProject);
 
