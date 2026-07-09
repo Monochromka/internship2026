@@ -7,7 +7,7 @@ namespace Projects.Api.Services
     {
         Task<Project> CreateProjectAsync(CreateProjectDto request);
 
-        Task<bool> ArchiveProjectAsync(Guid id);
+        Task<Project?> ArchiveProjectAsync(Guid id);
 
         Task<List<Project>> GetActiveProjectsAsync();
     }

@@ -29,6 +29,30 @@ namespace Projects.Api.Controllers
 
         }
 
-      
+        [HttpPatch("{id:guid}/archive")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> ArchiveProject(Guid id)
+        {
+            var project = await _projectService.ArchiveProjectAsync(id);
+
+            if (project == null)
+            {
+                return NotFound();
+            }
+                
+            return Ok(project);
+        }
+
+
+        [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<Entities.Project>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetActiveProjects()
+        {
+            var projects = await _projectService.GetActiveProjectsAsync();
+
+            return Ok(projects);
+        }
+
     }
 }

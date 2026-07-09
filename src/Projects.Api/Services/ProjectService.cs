@@ -31,19 +31,22 @@ namespace Projects.Api.Services
             return newProject;
         }
 
-        public async Task<bool> ArchiveProjectAsync(Guid id)
+        public async Task<Project?> ArchiveProjectAsync(Guid id)
         {
             var project = await _dbContext.Projects.FindAsync(id);
 
             if (project == null)
             {
-                return false;
+                return null;
             }
 
-            project.IsArchived = true;
-            await _dbContext.SaveChangesAsync();
+            if (!project.IsArchived)
+            {
+                project.IsArchived = true;
+                await _dbContext.SaveChangesAsync();
+            }
 
-            return true;
+            return project;
         }
 
         public async Task<List<Project>> GetActiveProjectsAsync()
