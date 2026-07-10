@@ -67,3 +67,6 @@ nunit-*.xml
 # OS-specific files
 .DS_Store
 Thumbs.db
+
+appsettings.Development.json
+appsettings.*.local.json
