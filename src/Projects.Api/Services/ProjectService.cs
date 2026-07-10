@@ -56,5 +56,10 @@ namespace Projects.Api.Services
                 .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync();
         }
+
+        public async Task<Project?> GetProjectByIdAsync(Guid id)
+        {
+            return await _dbContext.Projects.FindAsync(id);
+        }
     }
 }

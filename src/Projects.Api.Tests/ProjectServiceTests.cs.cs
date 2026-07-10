@@ -48,5 +48,33 @@ namespace Projects.Api.Tests
 
             Assert.Empty(result);
         }
+
+
+        [Fact]
+        public async Task GetProjectByIdAsync_ExistingId_ShouldReturnProject()
+        {
+            var context = GetInMemoryDbContext();
+            var service = new ProjectService(context);
+            var projectId = Guid.NewGuid();
+
+            context.Projects.Add(new Project { Id = projectId, Name = "Target Project" });
+            await context.SaveChangesAsync();
+
+            var result = await service.GetProjectByIdAsync(projectId);
+
+            Assert.NotNull(result);
+            Assert.Equal("Target Project", result.Name);
+        }
+
+        [Fact]
+        public async Task GetProjectByIdAsync_NonExistingId_ShouldReturnNull()
+        {
+            var context = GetInMemoryDbContext();
+            var service = new ProjectService(context);
+
+            var result = await service.GetProjectByIdAsync(Guid.NewGuid());
+
+            Assert.Null(result);
+        }
     }
 }

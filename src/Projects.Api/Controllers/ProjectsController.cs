@@ -54,5 +54,18 @@ namespace Projects.Api.Controllers
             return Ok(projects);
         }
 
+
+        [HttpGet("{id:guid}")]        
+        [ProducesResponseType(typeof(Entities.Project), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetProjectById([FromRoute] Guid id)
+        {
+            var project = await _projectService.GetProjectByIdAsync(id);
+            if (project == null)
+            {
+                return NotFound();
+            }
+            return Ok(project);
+        }
     }
 }
