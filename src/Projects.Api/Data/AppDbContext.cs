@@ -12,6 +12,7 @@ namespace Projects.Api.Data
         {
             modelBuilder.Entity<Entities.Project>()
                 .ToContainer("projects")
+                .HasNoDiscriminator()
                 .HasPartitionKey(p => p.Id);
         }
     }

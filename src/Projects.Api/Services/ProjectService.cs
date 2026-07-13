@@ -61,5 +61,28 @@ namespace Projects.Api.Services
         {
             return await _dbContext.Projects.FindAsync(id);
         }
+
+        public async Task<Project?> UpdateProjectAsync(Guid id, UpdateProjectDto request)
+        {
+            var project = await _dbContext.Projects.FindAsync(id);
+
+            if (project == null)
+            {
+                return null;
+            }
+
+          
+            if (project.IsArchived)
+            {
+                throw new InvalidOperationException("Cannot update an archived project.");
+            }
+
+            project.Name = request.Name;
+            project.Description = request.Description;
+
+            await _dbContext.SaveChangesAsync();
+
+            return project;
+        }
     }
 }
