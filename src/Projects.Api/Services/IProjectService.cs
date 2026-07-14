@@ -12,5 +12,7 @@ namespace Projects.Api.Services
         Task<List<Project>> GetActiveProjectsAsync();
 
         Task<Project?> GetProjectByIdAsync(Guid id);
+
+        Task<Project?> UpdateProjectAsync(Guid id, UpdateProjectDto request);
     }
 }
