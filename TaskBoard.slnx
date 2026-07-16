@@ -2,5 +2,6 @@
   <Folder Name="/src/">
     <Project Path="src/Projects.Api.Tests/Projects.Api.Tests.csproj" />
     <Project Path="src/Projects.Api/Projects.Api.csproj" />
+    <Project Path="src/Tasck.Api/Tasks.Api.csproj" />
   </Folder>
 </Solution>
