@@ -7,14 +7,17 @@ on:
   push:
     branches:
       - main
+       - developer
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-latest 
     permissions:
       contents: read #This is required for actions/checkout
-
     steps:
       - uses: actions/checkout@v4
 
@@ -25,6 +28,10 @@ jobs:
 
       - name: Build with dotnet
         run: dotnet build TaskBoard.slnx --configuration Release
+
+      # НОВИЙ КРОК: Запуск тестів (вимога 1)
+      - name: Run tests
+        run: dotnet test TaskBoard.slnx --configuration Release --no-build
 
       - name: dotnet publish
         run: dotnet publish src/Projects.Api/Projects.Api.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp"
@@ -38,10 +45,11 @@ jobs:
   deploy:
     runs-on: windows-latest
     needs: build
+    # НОВА УМОВА: Деплой виконується ТІЛЬКИ при пуші в main (вимога 2.1 та 2.2)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       id-token: write #This is required for requesting the JWT
       contents: read #This is required for actions/checkout
-
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
@@ -62,4 +70,3 @@ jobs:
           app-name: 'app-tntu-projects-api-zavtrak'
           slot-name: 'Production'
           package: .
-          
