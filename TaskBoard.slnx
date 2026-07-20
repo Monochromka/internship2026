@@ -3,6 +3,6 @@
     <Project Path="src/Projects.Api.Tests/Projects.Api.Tests.csproj" />
     <Project Path="src/Projects.Api/Projects.Api.csproj" />
     <Project Path="src/Tasck.Api/Tasks.Api.csproj" />
-    <Project Path="Tasks.Api.Tests/Tasks.Api.Tests.csproj" Id="a64fccf2-177d-4750-94b0-01b33d513544" />
+    <Project Path="src/Tasks.Api.Tests/Tasks.Api.Tests.csproj" />
   </Folder>
 </Solution>
