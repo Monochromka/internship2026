@@ -67,6 +67,28 @@ namespace Tasks.Api.Services
 
             return task;
         }
+
+        public async Task<TaskItem?> UpdateTaskAsync(Guid projectId, Guid taskId, UpdateTaskDto request)
+        {
+            var task = await _context.Tasks
+                .FirstOrDefaultAsync(t => t.Id == taskId && t.ProjectId == projectId);
+
+            if (task == null)
+            {
+                return null; 
+            }
+
+            task.Title = request.Title;
+            task.Description = request.Description;
+            task.Assignee = request.Assignee;
+            task.DueDate = request.DueDate;
+
+            task.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return task;
+        }
     }
 
 

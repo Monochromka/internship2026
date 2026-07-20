@@ -11,5 +11,7 @@ namespace Tasks.Api.Services
 
         Task<TaskItem?> GetTaskByIdAsync(Guid projectId, Guid taskId);
 
+        Task<TaskItem?> UpdateTaskAsync(Guid projectId, Guid taskId, UpdateTaskDto request);
+
     }
 }
