@@ -29,7 +29,6 @@ jobs:
       - name: Build with dotnet
         run: dotnet build TaskBoard.slnx --configuration Release
 
-      # НОВИЙ КРОК: Запуск тестів (вимога 1)
       - name: Run tests
         run: dotnet test TaskBoard.slnx --configuration Release --no-build
 
