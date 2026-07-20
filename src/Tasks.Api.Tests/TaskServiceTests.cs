@@ -163,5 +163,76 @@ namespace Tasks.Api.Tests
             // Assert
             Assert.Null(result);
         }
+
+        [Fact]
+        public async Task UpdateTaskAsync_TaskExists_UpdatesAllowedFieldsAndTimestamp()
+        {
+            // Arrange
+            using var context = new AppDbContext(_dbContextOptions);
+            var mockProjectsClient = new Mock<IProjectsClient>();
+            var projectId = Guid.NewGuid();
+            var taskId = Guid.NewGuid();
+            var originalTime = DateTime.UtcNow.AddDays(-1);
+            var originalStatus = Entities.TaskStatus.ToDo;
+
+            // Створюємо таску зі старими даними
+            var existingTask = new TaskItem
+            {
+                Id = taskId,
+                ProjectId = projectId,
+                Title = "Old Title",
+                Description = "Old Description",
+                Status = originalStatus,
+                CreatedAt = originalTime,
+                UpdatedAt = originalTime
+            };
+            context.Tasks.Add(existingTask);
+            await context.SaveChangesAsync();
+
+            var service = new TaskService(context, mockProjectsClient.Object);
+
+            var updateRequest = new UpdateTaskDto
+            {
+                Title = "New Title",
+                Description = "New Description",
+                Assignee = "New Assignee",
+                DueDate = DateTime.UtcNow.AddDays(7)
+            };
+
+            // Act
+            var result = await service.UpdateTaskAsync(projectId, taskId, updateRequest);
+
+            // Assert
+            Assert.NotNull(result);
+            // Перевіряємо, що дозволені поля змінилися
+            Assert.Equal("New Title", result.Title);
+            Assert.Equal("New Description", result.Description);
+            Assert.Equal("New Assignee", result.Assignee);
+            Assert.Equal(updateRequest.DueDate, result.DueDate);
+
+            // Перевіряємо, що UpdatedAt оновився, а CreatedAt та Status залишилися старими
+            Assert.True(result.UpdatedAt > originalTime);
+            Assert.Equal(originalTime, result.CreatedAt);
+            Assert.Equal(originalStatus, result.Status);
+        }
+
+        [Fact]
+        public async Task UpdateTaskAsync_TaskDoesNotExist_ReturnsNull()
+        {
+            // Arrange
+            using var context = new AppDbContext(_dbContextOptions);
+            var mockProjectsClient = new Mock<IProjectsClient>();
+            var service = new TaskService(context, mockProjectsClient.Object);
+
+            var updateRequest = new UpdateTaskDto { Title = "Doesn't matter" };
+
+            // Act (передаємо неіснуючі ID)
+            var result = await service.UpdateTaskAsync(Guid.NewGuid(), Guid.NewGuid(), updateRequest);
+
+            // Assert
+            Assert.Null(result);
+        }
     }
+
+
 }

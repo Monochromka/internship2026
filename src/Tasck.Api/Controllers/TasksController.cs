@@ -86,5 +86,28 @@ namespace Tasks.Api.Controllers
 
             return Ok(task);
         }
+
+
+        [HttpPut("{taskId}")]
+        [ProducesResponseType(typeof(Entities.TaskItem), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdateTask(Guid projectId, Guid taskId, [FromBody] UpdateTaskDto request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var updatedTask = await _taskService.UpdateTaskAsync(projectId, taskId, request);
+
+            if (updatedTask == null)
+            {
+                return NotFound(new { message = $"Task with ID {taskId} not found in project {projectId}." });
+            }
+
+            return Ok(updatedTask);
+        }
+
     }
 }
