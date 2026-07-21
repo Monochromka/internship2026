@@ -89,7 +89,27 @@ namespace Tasks.Api.Services
 
             return task;
         }
-    }
+        public async Task<(TaskItem? Task, bool IsConflict)> ChangeTaskStatusAsync(Guid projectId, Guid taskId, Entities.TaskStatus newStatus)
+        {
+            var task = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == taskId && t.ProjectId == projectId);
 
+            if (task == null)
+            {
+                return (null, false);
+            }
+
+            if (!task.CanTransitionTo(newStatus))
+            {
+                return (task, true);
+            }
+
+            task.Status = newStatus;
+            task.UpdatedAt = DateTime.UtcNow; 
+
+            await _context.SaveChangesAsync();
+
+            return (task, false);
+        }
+    }
 
 }
