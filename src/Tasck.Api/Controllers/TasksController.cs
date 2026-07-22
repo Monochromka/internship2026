@@ -109,5 +109,32 @@ namespace Tasks.Api.Controllers
             return Ok(updatedTask);
         }
 
+        [HttpPatch("{taskId}/status")]
+        [ProducesResponseType(typeof(Entities.TaskItem), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status409Conflict)]
+        public async Task<IActionResult> ChangeTaskStatus(Guid projectId, Guid taskId, [FromBody] ChangeTaskStatusDto request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var (task, isConflict) = await _taskService.ChangeTaskStatusAsync(projectId, taskId, request.Status);
+
+            if (task == null)
+            {
+                return NotFound(); 
+            }
+
+            if (isConflict)
+            {
+                return Conflict(new { message = $"Cannot transition task from {task.Status} to {request.Status}." });
+            }
+
+            return Ok(task); 
+        }
+
     }
 }

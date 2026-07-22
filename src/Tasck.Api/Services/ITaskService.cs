@@ -13,5 +13,7 @@ namespace Tasks.Api.Services
 
         Task<TaskItem?> UpdateTaskAsync(Guid projectId, Guid taskId, UpdateTaskDto request);
 
+        Task<(TaskItem? Task, bool IsConflict)> ChangeTaskStatusAsync(Guid projectId, Guid taskId, Entities.TaskStatus newStatus);
+
     }
 }
