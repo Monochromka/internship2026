@@ -15,5 +15,7 @@ namespace Tasks.Api.Services
 
         Task<(TaskItem? Task, bool IsConflict)> ChangeTaskStatusAsync(Guid projectId, Guid taskId, Entities.TaskStatus newStatus);
 
+        Task<bool> DeleteTaskAsync(Guid projectId, Guid taskId);
+
     }
 }
