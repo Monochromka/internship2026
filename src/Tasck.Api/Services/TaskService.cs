@@ -110,6 +110,21 @@ namespace Tasks.Api.Services
 
             return (task, false);
         }
+
+        public async Task<bool> DeleteTaskAsync(Guid projectId, Guid taskId)
+        {
+            var task = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == taskId && t.ProjectId == projectId);
+
+            if (task == null)
+            {
+                return false; 
+            }
+
+            _context.Tasks.Remove(task);
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
     }
 
 }

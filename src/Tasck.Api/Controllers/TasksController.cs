@@ -136,5 +136,20 @@ namespace Tasks.Api.Controllers
             return Ok(task); 
         }
 
+        [HttpDelete("{taskId}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteTask(Guid projectId, Guid taskId)
+        {
+            var isDeleted = await _taskService.DeleteTaskAsync(projectId, taskId);
+
+            if (!isDeleted)
+            {
+                return NotFound();
+            }
+
+            return NoContent();
+        }
+
     }
 }
