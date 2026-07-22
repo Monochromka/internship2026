@@ -15,11 +15,6 @@
 
         public bool CanTransitionTo(TaskStatus newStatus)
         {
-            if (Status == newStatus)
-            {
-                return true;
-            }
-
             return (Status, newStatus) switch
             {
                 (TaskStatus.ToDo, TaskStatus.InProgress) => true,

@@ -21,6 +21,175 @@ namespace Tasks.Api.Tests
         }
 
         [Fact]
+        public async Task DeleteTaskAsync_TaskExists_RemovesTaskAndReturnsTrue()
+        {
+            using var context = new AppDbContext(_dbContextOptions);
+            var mockProjectsClient = new Mock<IProjectsClient>();
+            var projectId = Guid.NewGuid();
+            var taskId = Guid.NewGuid();
+
+            context.Tasks.Add(new TaskItem
+            {
+                Id = taskId,
+                ProjectId = projectId,
+                Title = "Task to delete",
+                CreatedAt = DateTimeOffset.UtcNow.AddDays(-1),
+                UpdatedAt = DateTimeOffset.UtcNow.AddDays(-1)
+            });
+            await context.SaveChangesAsync();
+
+            var service = new TaskService(context, mockProjectsClient.Object);
+
+            var result = await service.DeleteTaskAsync(projectId, taskId);
+
+            Assert.True(result);
+            Assert.Empty(context.Tasks);
+        }
+
+        [Fact]
+        public async Task DeleteTaskAsync_TaskDoesNotExist_ReturnsFalse()
+        {
+            using var context = new AppDbContext(_dbContextOptions);
+            var mockProjectsClient = new Mock<IProjectsClient>();
+            var service = new TaskService(context, mockProjectsClient.Object);
+
+            var result = await service.DeleteTaskAsync(Guid.NewGuid(), Guid.NewGuid());
+
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task DeleteTaskAsync_DeletedTaskCannotBeRetrievedById()
+        {
+            using var context = new AppDbContext(_dbContextOptions);
+            var mockProjectsClient = new Mock<IProjectsClient>();
+            var projectId = Guid.NewGuid();
+            var taskId = Guid.NewGuid();
+
+            context.Tasks.Add(new TaskItem
+            {
+                Id = taskId,
+                ProjectId = projectId,
+                Title = "Task to delete",
+                CreatedAt = DateTimeOffset.UtcNow.AddDays(-1),
+                UpdatedAt = DateTimeOffset.UtcNow.AddDays(-1)
+            });
+            await context.SaveChangesAsync();
+
+            var service = new TaskService(context, mockProjectsClient.Object);
+
+            var deleted = await service.DeleteTaskAsync(projectId, taskId);
+            var result = await service.GetTaskByIdAsync(projectId, taskId);
+
+            Assert.True(deleted);
+            Assert.Null(result);
+        }
+
+        public static IEnumerable<object[]> DisallowedStatusTransitions()
+        {
+            yield return new object[] { Entities.TaskStatus.ToDo, Entities.TaskStatus.ToDo };
+            yield return new object[] { Entities.TaskStatus.ToDo, Entities.TaskStatus.Done };
+            yield return new object[] { Entities.TaskStatus.InProgress, Entities.TaskStatus.ToDo };
+            yield return new object[] { Entities.TaskStatus.InProgress, Entities.TaskStatus.InProgress };
+            yield return new object[] { Entities.TaskStatus.Done, Entities.TaskStatus.ToDo };
+            yield return new object[] { Entities.TaskStatus.Done, Entities.TaskStatus.InProgress };
+            yield return new object[] { Entities.TaskStatus.Done, Entities.TaskStatus.Done };
+        }
+
+        [Fact]
+        public async Task ChangeTaskStatusAsync_ToDoToInProgress_UpdatesStatusAndTimestamp()
+        {
+            using var context = new AppDbContext(_dbContextOptions);
+            var mockProjectsClient = new Mock<IProjectsClient>();
+            var projectId = Guid.NewGuid();
+            var taskId = Guid.NewGuid();
+            var originalTime = DateTimeOffset.UtcNow.AddDays(-1);
+
+            context.Tasks.Add(new TaskItem
+            {
+                Id = taskId,
+                ProjectId = projectId,
+                Title = "Task",
+                Status = Entities.TaskStatus.ToDo,
+                CreatedAt = originalTime,
+                UpdatedAt = originalTime
+            });
+            await context.SaveChangesAsync();
+
+            var service = new TaskService(context, mockProjectsClient.Object);
+
+            var result = await service.ChangeTaskStatusAsync(projectId, taskId, Entities.TaskStatus.InProgress);
+
+            Assert.NotNull(result.Task);
+            Assert.False(result.IsConflict);
+            Assert.Equal(Entities.TaskStatus.InProgress, result.Task!.Status);
+            Assert.True(result.Task.UpdatedAt > originalTime);
+        }
+
+        [Fact]
+        public async Task ChangeTaskStatusAsync_InProgressToDone_UpdatesStatusAndTimestamp()
+        {
+            using var context = new AppDbContext(_dbContextOptions);
+            var mockProjectsClient = new Mock<IProjectsClient>();
+            var projectId = Guid.NewGuid();
+            var taskId = Guid.NewGuid();
+            var originalTime = DateTimeOffset.UtcNow.AddDays(-1);
+
+            context.Tasks.Add(new TaskItem
+            {
+                Id = taskId,
+                ProjectId = projectId,
+                Title = "Task",
+                Status = Entities.TaskStatus.InProgress,
+                CreatedAt = originalTime,
+                UpdatedAt = originalTime
+            });
+            await context.SaveChangesAsync();
+
+            var service = new TaskService(context, mockProjectsClient.Object);
+
+            var result = await service.ChangeTaskStatusAsync(projectId, taskId, Entities.TaskStatus.Done);
+
+            Assert.NotNull(result.Task);
+            Assert.False(result.IsConflict);
+            Assert.Equal(Entities.TaskStatus.Done, result.Task!.Status);
+            Assert.True(result.Task.UpdatedAt > originalTime);
+        }
+
+        [Theory]
+        [MemberData(nameof(DisallowedStatusTransitions))]
+        public async Task ChangeTaskStatusAsync_DisallowedTransition_ReturnsConflictAndPreservesTask(
+            Entities.TaskStatus currentStatus,
+            Entities.TaskStatus requestedStatus)
+        {
+            using var context = new AppDbContext(_dbContextOptions);
+            var mockProjectsClient = new Mock<IProjectsClient>();
+            var projectId = Guid.NewGuid();
+            var taskId = Guid.NewGuid();
+            var originalTime = DateTimeOffset.UtcNow.AddDays(-1);
+
+            context.Tasks.Add(new TaskItem
+            {
+                Id = taskId,
+                ProjectId = projectId,
+                Title = "Task",
+                Status = currentStatus,
+                CreatedAt = originalTime,
+                UpdatedAt = originalTime
+            });
+            await context.SaveChangesAsync();
+
+            var service = new TaskService(context, mockProjectsClient.Object);
+
+            var result = await service.ChangeTaskStatusAsync(projectId, taskId, requestedStatus);
+
+            Assert.NotNull(result.Task);
+            Assert.True(result.IsConflict);
+            Assert.Equal(currentStatus, result.Task!.Status);
+            Assert.Equal(originalTime, result.Task.UpdatedAt);
+        }
+
+        [Fact]
         public async Task CreateTaskAsync_WithValidProject_ReturnsTask()
         {
             // Arrange (Підготовка)
