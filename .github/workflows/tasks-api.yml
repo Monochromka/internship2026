@@ -1,0 +1,70 @@
+name: Tasks API CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - developer
+    paths:
+      - 'src/Tasks.Api/**'
+      - 'src/Tasks.Api.Tests/**'
+  pull_request:
+    branches:
+      - main
+      - developer
+    paths:
+      - 'src/Tasks.Api/**'
+      - 'src/Tasks.Api.Tests/**'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
+
+      - name: Build Tasks.Api
+        run: dotnet build src/Tasks.Api/Tasks.Api.csproj --configuration Release
+
+      - name: Run Tasks.Api tests
+        run: dotnet test src/Tasks.Api.Tests/Tasks.Api.Tests.csproj --configuration Release --no-build
+
+      - name: Publish Tasks.Api
+        run: dotnet publish src/Tasks.Api/Tasks.Api.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tasks-api-app
+          path: ${{env.DOTNET_ROOT}}/myapp
+
+  deploy:
+    runs-on: windows-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tasks-api-app
+      
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_0F72C1B322994584ADA68E8FEC71A480 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_BB3D1E96374D437D99167732B5909682 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_489640ED556A48278EE898E6A3AD3C33 }}
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'app-tntu-tasks-api-zavtrak' # Наш новий ресурс!
+          slot-name: 'Production'
+          package: .

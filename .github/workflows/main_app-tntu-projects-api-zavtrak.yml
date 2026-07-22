@@ -7,10 +7,18 @@ on:
   push:
     branches:
       - main
-       - developer
+      - developer
+    paths:
+      - 'src/Projects.Api/**'
+      - 'src/Projects.Api.Tests/**'
   pull_request:
     branches:
       - main
+      - developer
+    paths:
+      - 'src/Projects.Api/**'
+      - 'src/Projects.Api.Tests/**'
+ 
   workflow_dispatch:
 
 jobs:
@@ -27,10 +35,10 @@ jobs:
           dotnet-version: '8.x'
 
       - name: Build with dotnet
-        run: dotnet build TaskBoard.slnx --configuration Release
+        run: dotnet build src/Projects.Api/Projects.Api.csproj --configuration Release
 
       - name: Run tests
-        run: dotnet test TaskBoard.slnx --configuration Release --no-build
+        run: dotnet test src/Projects.Api.Tests/Projects.Api.Tests.csproj --configuration Release --no-build
 
       - name: dotnet publish
         run: dotnet publish src/Projects.Api/Projects.Api.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp"
