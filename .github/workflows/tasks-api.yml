@@ -6,14 +6,14 @@ on:
       - main
       - developer
     paths:
-      - 'src/Tasks.Api/**'
+      - 'src/Tasck.Api/**'
       - 'src/Tasks.Api.Tests/**'
   pull_request:
     branches:
       - main
       - developer
     paths:
-      - 'src/Tasks.Api/**'
+      - 'src/Tasck.Api/**'
       - 'src/Tasks.Api.Tests/**'
 
 jobs:
@@ -28,13 +28,13 @@ jobs:
           dotnet-version: '8.x'
 
       - name: Build Tasks.Api
-        run: dotnet build src/Tasks.Api/Tasks.Api.csproj --configuration Release
+        run: dotnet build src/Tasck.Api/Tasks.Api.csproj --configuration Release
 
       - name: Run Tasks.Api tests
         run: dotnet test src/Tasks.Api.Tests/Tasks.Api.Tests.csproj --configuration Release --no-build
 
       - name: Publish Tasks.Api
-        run: dotnet publish src/Tasks.Api/Tasks.Api.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+        run: dotnet publish src/Tasck.Api/Tasks.Api.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
