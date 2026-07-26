@@ -31,7 +31,7 @@ jobs:
         run: dotnet build src/Tasck.Api/Tasks.Api.csproj --configuration Release
 
       - name: Run Tasks.Api tests
-        run: dotnet test src/Tasks.Api.Tests/Tasks.Api.Tests.csproj --configuration Release --no-build
+        run: dotnet test src/Tasks.Api.Tests/Tasks.Api.Tests.csproj --configuration Release 
 
       - name: Publish Tasks.Api
         run: dotnet publish src/Tasck.Api/Tasks.Api.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp"
@@ -65,6 +65,6 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'app-tntu-tasks-api-zavtrak' # Наш новий ресурс!
+          app-name: 'app-tntu-tasks-api-zavtrak' 
           slot-name: 'Production'
           package: .
