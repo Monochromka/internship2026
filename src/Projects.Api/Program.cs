@@ -1,8 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Projects.Api.Data;
 using Projects.Api.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddApplicationInsightsTelemetry();
 
 // Add services to the container.
 builder.Services.AddScoped<IProjectService, ProjectService>();
@@ -16,6 +19,17 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         builder.Configuration["CosmosDb:Key"]!,
         builder.Configuration["CosmosDb:DatabaseName"]!
     ));
+
+var cosmosEndpoint = builder.Configuration["CosmosDb:Endpoint"];
+var cosmosKey = builder.Configuration["CosmosDb:Key"];
+var cosmosConnectionString = $"AccountEndpoint={cosmosEndpoint};AccountKey={cosmosKey};";
+
+builder.Services.AddHealthChecks()
+    .AddAzureCosmosDB(
+        sp => new Microsoft.Azure.Cosmos.CosmosClient(cosmosConnectionString),
+        name: "cosmosdb"
+    );
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -38,5 +52,4 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHealthChecks("/health");
 app.Run();

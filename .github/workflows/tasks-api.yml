@@ -6,14 +6,18 @@ on:
       - main
       - developer
     paths:
-      - 'src/Tasck.Api/**'
+      - 'src/Tasks.Api/**'
       - 'src/Tasks.Api.Tests/**'
   pull_request:
     branches:
       - main
       - developer
     paths:
-      - 'src/Tasck.Api/**'
+<<<<<<< HEAD
+      - 'src/Task.Api/**'
+=======
+      - 'src/Tasks.Api/**'
+>>>>>>> f8d37ea614a4624932d150391c75f2bad757a75d
       - 'src/Tasks.Api.Tests/**'
 
 jobs:
@@ -28,13 +32,21 @@ jobs:
           dotnet-version: '8.x'
 
       - name: Build Tasks.Api
-        run: dotnet build src/Tasck.Api/Tasks.Api.csproj --configuration Release
+<<<<<<< HEAD
+        run: dotnet build src/Task.Api/Tasks.Api.csproj --configuration Release
+=======
+        run: dotnet build src/Tasks.Api/Tasks.Api.csproj --configuration Release
+>>>>>>> f8d37ea614a4624932d150391c75f2bad757a75d
 
       - name: Run Tasks.Api tests
         run: dotnet test src/Tasks.Api.Tests/Tasks.Api.Tests.csproj --configuration Release
 
       - name: Publish Tasks.Api
-        run: dotnet publish src/Tasck.Api/Tasks.Api.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+<<<<<<< HEAD
+        run: dotnet publish src/Task.Api/Tasks.Api.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+=======
+        run: dotnet publish src/Tasks.Api/Tasks.Api.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+>>>>>>> f8d37ea614a4624932d150391c75f2bad757a75d
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -54,7 +66,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tasks-api-app
-      
+        
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -65,6 +77,6 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'app-tntu-tasks-api-zavtrak' # Наш новий ресурс!
+          app-name: 'app-tntu-tasks-api-zavtrak' 
           slot-name: 'Production'
           package: .

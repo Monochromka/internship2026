@@ -1,6 +1,0 @@
-@Tasck.Api_HostAddress = http://localhost:5116
-
-GET {{Tasck.Api_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
