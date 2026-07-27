@@ -2,24 +2,27 @@ name: Tasks API CI/CD
 
 on:
   workflow_dispatch:
+
   push:
     branches:
       - main
       - developer
     paths:
-      - 'src/Tasks.Api/**'
+      - 'src/Task.Api/**'
       - 'src/Tasks.Api.Tests/**'
+
   pull_request:
     branches:
       - main
       - developer
     paths:
-      - 'src/Tasks.Api/**'
+      - 'src/Task.Api/**'
       - 'src/Tasks.Api.Tests/**'
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -28,36 +31,42 @@ jobs:
         with:
           dotnet-version: '8.x'
 
+      - name: Restore Tasks.Api
+        run: dotnet restore src/Task.Api/Tasks.Api.csproj
+
       - name: Build Tasks.Api
-        run: dotnet build src/Tasks.Api/Tasks.Api.csproj --configuration Release
+        run: dotnet build src/Task.Api/Tasks.Api.csproj --configuration Release --no-restore
 
       - name: Run Tasks.Api tests
         run: dotnet test src/Tasks.Api.Tests/Tasks.Api.Tests.csproj --configuration Release
 
       - name: Publish Tasks.Api
-        run: dotnet publish src/Tasks.Api/Tasks.Api.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+        run: dotnet publish src/Task.Api/Tasks.Api.csproj -c Release -o "${{ env.DOTNET_ROOT }}/myapp"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: tasks-api-app
-          path: ${{env.DOTNET_ROOT}}/myapp
+          path: ${{ env.DOTNET_ROOT }}/myapp
 
   deploy:
     runs-on: windows-latest
     needs: build
+
     if: |
-     (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       github.event_name == 'workflow_dispatch'
+
     permissions:
       id-token: write
       contents: read
+
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: tasks-api-app
-        
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -68,6 +77,6 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'app-tntu-tasks-api-zavtrak' 
+          app-name: 'app-tntu-tasks-api-zavtrak'
           slot-name: 'Production'
           package: .
