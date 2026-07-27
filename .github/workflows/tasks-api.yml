@@ -1,6 +1,7 @@
 name: Tasks API CI/CD
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -45,7 +46,9 @@ jobs:
   deploy:
     runs-on: windows-latest
     needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: |
+     (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      github.event_name == 'workflow_dispatch'
     permissions:
       id-token: write
       contents: read
