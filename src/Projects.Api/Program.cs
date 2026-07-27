@@ -29,7 +29,7 @@ builder.Services.AddHealthChecks()
         sp => new Microsoft.Azure.Cosmos.CosmosClient(cosmosConnectionString),
         name: "cosmosdb"
     );
-
+builder.Logging.AddConsole();
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
