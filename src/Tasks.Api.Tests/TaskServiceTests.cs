@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Tasks.Api.Data;
 using Tasks.Api.Entities;
@@ -11,6 +12,11 @@ namespace Tasks.Api.Tests
     public class TaskServiceTests
     {
         private readonly DbContextOptions<AppDbContext> _dbContextOptions;
+
+        private static TaskService CreateService(AppDbContext context, Mock<IProjectsClient> mockProjectsClient)
+        {
+            return new TaskService(context, mockProjectsClient.Object, NullLogger<TaskService>.Instance);
+        }
 
         public TaskServiceTests()
         {
@@ -38,7 +44,7 @@ namespace Tasks.Api.Tests
             });
             await context.SaveChangesAsync();
 
-            var service = new TaskService(context, mockProjectsClient.Object);
+            var service = CreateService(context, mockProjectsClient);
 
             var result = await service.DeleteTaskAsync(projectId, taskId);
 
@@ -51,7 +57,7 @@ namespace Tasks.Api.Tests
         {
             using var context = new AppDbContext(_dbContextOptions);
             var mockProjectsClient = new Mock<IProjectsClient>();
-            var service = new TaskService(context, mockProjectsClient.Object);
+            var service = CreateService(context, mockProjectsClient);
 
             var result = await service.DeleteTaskAsync(Guid.NewGuid(), Guid.NewGuid());
 
@@ -76,7 +82,7 @@ namespace Tasks.Api.Tests
             });
             await context.SaveChangesAsync();
 
-            var service = new TaskService(context, mockProjectsClient.Object);
+            var service = CreateService(context, mockProjectsClient);
 
             var deleted = await service.DeleteTaskAsync(projectId, taskId);
             var result = await service.GetTaskByIdAsync(projectId, taskId);
@@ -116,7 +122,7 @@ namespace Tasks.Api.Tests
             });
             await context.SaveChangesAsync();
 
-            var service = new TaskService(context, mockProjectsClient.Object);
+            var service = CreateService(context, mockProjectsClient);
 
             var result = await service.ChangeTaskStatusAsync(projectId, taskId, Entities.TaskStatus.InProgress);
 
@@ -146,7 +152,7 @@ namespace Tasks.Api.Tests
             });
             await context.SaveChangesAsync();
 
-            var service = new TaskService(context, mockProjectsClient.Object);
+            var service = CreateService(context, mockProjectsClient);
 
             var result = await service.ChangeTaskStatusAsync(projectId, taskId, Entities.TaskStatus.Done);
 
@@ -179,7 +185,7 @@ namespace Tasks.Api.Tests
             });
             await context.SaveChangesAsync();
 
-            var service = new TaskService(context, mockProjectsClient.Object);
+            var service = CreateService(context, mockProjectsClient);
 
             var result = await service.ChangeTaskStatusAsync(projectId, taskId, requestedStatus);
 
@@ -201,7 +207,7 @@ namespace Tasks.Api.Tests
             mockProjectsClient.Setup(client => client.GetProjectAsync(projectId))
                 .ReturnsAsync(new ProjectDto { Id = projectId, IsArchived = false });
 
-            var service = new TaskService(context, mockProjectsClient.Object);
+            var service = CreateService(context, mockProjectsClient);
             var request = new CreateTaskDto { Title = "Implement create project endpoint" };
 
             // Act (Дія)
@@ -229,7 +235,7 @@ namespace Tasks.Api.Tests
             mockProjectsClient.Setup(client => client.GetProjectAsync(projectId))
                 .ReturnsAsync(new ProjectDto { Id = projectId, IsArchived = true });
 
-            var service = new TaskService(context, mockProjectsClient.Object);
+            var service = CreateService(context, mockProjectsClient);
             var request = new CreateTaskDto { Title = "Test Task" };
 
             // Act & Assert (Має викинути InvalidOperationException)
@@ -256,7 +262,7 @@ namespace Tasks.Api.Tests
             );
             await context.SaveChangesAsync();
 
-            var service = new TaskService(context, mockProjectsClient.Object);
+            var service = CreateService(context, mockProjectsClient);
 
             // Act (Дія)
             var result = await service.GetTasksByProjectIdAsync(projectId);
@@ -280,7 +286,7 @@ namespace Tasks.Api.Tests
             mockProjectsClient.Setup(client => client.GetProjectAsync(projectId))
                 .ReturnsAsync((ProjectDto?)null);
 
-            var service = new TaskService(context, mockProjectsClient.Object);
+            var service = CreateService(context, mockProjectsClient);
 
             // Act
             var result = await service.GetTasksByProjectIdAsync(projectId);
@@ -306,7 +312,7 @@ namespace Tasks.Api.Tests
             });
             await context.SaveChangesAsync();
 
-            var service = new TaskService(context, mockProjectsClient.Object);
+            var service = CreateService(context, mockProjectsClient);
 
             // Act
             var result = await service.GetTaskByIdAsync(projectId, taskId);
@@ -324,7 +330,7 @@ namespace Tasks.Api.Tests
             using var context = new AppDbContext(_dbContextOptions);
             var mockProjectsClient = new Mock<IProjectsClient>();
 
-            var service = new TaskService(context, mockProjectsClient.Object);
+            var service = CreateService(context, mockProjectsClient);
 
             // Act (Шукаємо випадкові ID, яких немає в базі)
             var result = await service.GetTaskByIdAsync(Guid.NewGuid(), Guid.NewGuid());
@@ -358,7 +364,7 @@ namespace Tasks.Api.Tests
             context.Tasks.Add(existingTask);
             await context.SaveChangesAsync();
 
-            var service = new TaskService(context, mockProjectsClient.Object);
+            var service = CreateService(context, mockProjectsClient);
 
             var updateRequest = new UpdateTaskDto
             {
@@ -391,7 +397,7 @@ namespace Tasks.Api.Tests
             // Arrange
             using var context = new AppDbContext(_dbContextOptions);
             var mockProjectsClient = new Mock<IProjectsClient>();
-            var service = new TaskService(context, mockProjectsClient.Object);
+            var service = CreateService(context, mockProjectsClient);
 
             var updateRequest = new UpdateTaskDto { Title = "Doesn't matter" };
 
