@@ -1,5 +1,6 @@
 ﻿using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Projects.Api.Data;
 using Projects.Api.Entities;
 using Projects.Api.Models;
@@ -11,6 +12,11 @@ namespace Projects.Api.Tests
 {
     public class ProjectServiceTests
     {
+        private static ProjectService CreateService(AppDbContext context)
+        {
+            return new ProjectService(context, NullLogger<ProjectService>.Instance);
+        }
+
         private AppDbContext GetInMemoryDbContext()
         {
             var options = new DbContextOptionsBuilder<AppDbContext>()
@@ -24,7 +30,7 @@ namespace Projects.Api.Tests
         public async Task GetActiveProjectsAsync_ShouldReturnOnlyNonArchived_OrderedByDateDesc()
         {
             var context = GetInMemoryDbContext();
-            var service = new ProjectService(context);
+            var service = CreateService(context);
 
             context.Projects.AddRange(
                 new Project { Id = Guid.NewGuid(), Name = "Old Active", IsArchived = false, CreatedAt = DateTimeOffset.UtcNow.AddDays(-2) },
@@ -45,7 +51,7 @@ namespace Projects.Api.Tests
         {
 
             var context = GetInMemoryDbContext();
-            var service = new ProjectService(context);
+            var service = CreateService(context);
 
             var result = await service.GetActiveProjectsAsync();
 
@@ -57,7 +63,7 @@ namespace Projects.Api.Tests
         public async Task GetProjectByIdAsync_ExistingId_ShouldReturnProject()
         {
             var context = GetInMemoryDbContext();
-            var service = new ProjectService(context);
+            var service = CreateService(context);
             var projectId = Guid.NewGuid();
 
             context.Projects.Add(new Project { Id = projectId, Name = "Target Project" });
@@ -73,7 +79,7 @@ namespace Projects.Api.Tests
         public async Task GetProjectByIdAsync_NonExistingId_ShouldReturnNull()
         {
             var context = GetInMemoryDbContext();
-            var service = new ProjectService(context);
+            var service = CreateService(context);
 
             var result = await service.GetProjectByIdAsync(Guid.NewGuid());
 
@@ -127,7 +133,7 @@ namespace Projects.Api.Tests
         {
             // Arrange: створюємо базу і сервіс так само, як у твоїх інших тестах
             var context = GetInMemoryDbContext();
-            var service = new ProjectService(context);
+            var service = CreateService(context);
 
             var projectId = Guid.NewGuid();
             var existingProject = new Project
@@ -155,7 +161,7 @@ namespace Projects.Api.Tests
         {
             // Arrange: створюємо базу і сервіс
             var context = GetInMemoryDbContext();
-            var service = new ProjectService(context);
+            var service = CreateService(context);
 
             var nonExistentId = Guid.NewGuid();
             var updateRequest = new UpdateProjectDto { Name = "Valid Name", Description = "Valid Desc" };

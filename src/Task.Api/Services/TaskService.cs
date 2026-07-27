@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Tasks.Api.Data;
 using Tasks.Api.Entities;
 using Tasks.Api.Models;
@@ -9,20 +10,37 @@ namespace Tasks.Api.Services
     {
         private readonly AppDbContext _context;
         private readonly IProjectsClient _projectsClient;
+        private readonly ILogger<TaskService> _logger;
 
-        public TaskService(AppDbContext context, IProjectsClient projectsClient)
+        public TaskService(
+            AppDbContext context,
+            IProjectsClient projectsClient,
+            ILogger<TaskService> logger)
         {
             _context = context;
             _projectsClient = projectsClient;
+            _logger = logger;
         }
 
         public async Task<TaskItem?> CreateTaskAsync(Guid projectId, CreateTaskDto request)
         {
             var project = await _projectsClient.GetProjectAsync(projectId);
 
-            if (project == null) return null;
+            if (project == null)
+            {
+                _logger.LogWarning(
+                    "Task creation skipped because project {ProjectId} was not found",
+                    projectId);
+                return null;
+            }
 
-            if (project.IsArchived) throw new InvalidOperationException("Cannot add tasks to an archived project.");
+            if (project.IsArchived)
+            {
+                _logger.LogWarning(
+                    "Task creation failed because project {ProjectId} is archived",
+                    projectId);
+                throw new InvalidOperationException("Cannot add tasks to an archived project.");
+            }
 
             var task = new TaskItem
             {
@@ -40,6 +58,11 @@ namespace Tasks.Api.Services
             _context.Tasks.Add(task);
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation(
+                "Task {TaskId} created for project {ProjectId}",
+                task.Id,
+                projectId);
+
             return task;
         }
 
@@ -50,7 +73,10 @@ namespace Tasks.Api.Services
             var project = await _projectsClient.GetProjectAsync(projectId);
             if (project == null)
             {
-                return null; 
+                _logger.LogWarning(
+                    "Task list request failed because project {ProjectId} was not found",
+                    projectId);
+                return null;
             }
 
             var tasks = await _context.Tasks
@@ -58,7 +84,7 @@ namespace Tasks.Api.Services
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
 
-            return tasks;
+                 return tasks;
         }
         public async Task<TaskItem?> GetTaskByIdAsync(Guid projectId, Guid taskId)
         {
@@ -75,7 +101,11 @@ namespace Tasks.Api.Services
 
             if (task == null)
             {
-                return null; 
+                _logger.LogWarning(
+                    "Task update failed because task {TaskId} in project {ProjectId} was not found",
+                    taskId,
+                    projectId);
+                return null;
             }
 
             task.Title = request.Title;
@@ -87,6 +117,11 @@ namespace Tasks.Api.Services
 
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation(
+                "Task {TaskId} updated in project {ProjectId}",
+                taskId,
+                projectId);
+
             return task;
         }
         public async Task<(TaskItem? Task, bool IsConflict)> ChangeTaskStatusAsync(Guid projectId, Guid taskId, Entities.TaskStatus newStatus)
@@ -95,18 +130,34 @@ namespace Tasks.Api.Services
 
             if (task == null)
             {
+                _logger.LogWarning(
+                    "Task status change failed because task {TaskId} in project {ProjectId} was not found",
+                    taskId,
+                    projectId);
                 return (null, false);
             }
 
             if (!task.CanTransitionTo(newStatus))
             {
+                _logger.LogWarning(
+                    "Task status change conflict for task {TaskId} in project {ProjectId}: current {CurrentStatus}, requested {RequestedStatus}",
+                    taskId,
+                    projectId,
+                    task.Status,
+                    newStatus);
                 return (task, true);
             }
 
             task.Status = newStatus;
-            task.UpdatedAt = DateTime.UtcNow; 
+            task.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Task {TaskId} status changed to {Status} in project {ProjectId}",
+                taskId,
+                newStatus,
+                projectId);
 
             return (task, false);
         }
@@ -117,11 +168,20 @@ namespace Tasks.Api.Services
 
             if (task == null)
             {
-                return false; 
+                _logger.LogWarning(
+                    "Task deletion skipped because task {TaskId} in project {ProjectId} was not found",
+                    taskId,
+                    projectId);
+                return false;
             }
 
             _context.Tasks.Remove(task);
             await _context.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Task {TaskId} deleted from project {ProjectId}",
+                taskId,
+                projectId);
 
             return true;
         }

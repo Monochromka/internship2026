@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Projects.Api.Data;
 using Projects.Api.Entities;
 using Projects.Api.Models;
@@ -8,10 +9,12 @@ namespace Projects.Api.Services
     public class ProjectService : IProjectService
     {
         private readonly AppDbContext _dbContext;
+        private readonly ILogger<ProjectService> _logger;
 
-        public ProjectService(AppDbContext dbContext)
+        public ProjectService(AppDbContext dbContext, ILogger<ProjectService> logger)
         {
             _dbContext = dbContext;
+            _logger = logger;
         }
 
         public async Task<Project> CreateProjectAsync(CreateProjectDto request)
@@ -28,6 +31,10 @@ namespace Projects.Api.Services
             _dbContext.Projects.Add(newProject);
             await _dbContext.SaveChangesAsync();
 
+            _logger.LogInformation(
+                "Project {ProjectId} created",
+                newProject.Id);
+
             return newProject;
         }
 
@@ -37,6 +44,9 @@ namespace Projects.Api.Services
 
             if (project == null)
             {
+                _logger.LogWarning(
+                    "Archive skipped because project {ProjectId} was not found",
+                    id);
                 return null;
             }
 
@@ -44,6 +54,16 @@ namespace Projects.Api.Services
             {
                 project.IsArchived = true;
                 await _dbContext.SaveChangesAsync();
+
+                _logger.LogInformation(
+                    "Project {ProjectId} archived",
+                    id);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Archive skipped because project {ProjectId} is already archived",
+                    id);
             }
 
             return project;
@@ -68,12 +88,18 @@ namespace Projects.Api.Services
 
             if (project == null)
             {
+                _logger.LogWarning(
+                    "Update failed because project {ProjectId} was not found",
+                    id);
                 return null;
             }
 
           
             if (project.IsArchived)
             {
+                _logger.LogWarning(
+                    "Update failed because project {ProjectId} is archived",
+                    id);
                 throw new InvalidOperationException("Cannot update an archived project.");
             }
 
@@ -81,6 +107,10 @@ namespace Projects.Api.Services
             project.Description = request.Description;
 
             await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Project {ProjectId} updated",
+                id);
 
             return project;
         }
