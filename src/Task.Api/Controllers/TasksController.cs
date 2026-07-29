@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Tasks.Api.Entities;
 using Tasks.Api.Models;
 using Tasks.Api.Services;
 
@@ -50,26 +51,27 @@ namespace Tasks.Api.Controllers
         }
 
         [HttpGet]
-        [ProducesResponseType(typeof(IEnumerable<Entities.TaskItem>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status502BadGateway)]
-        public async Task<IActionResult> GetTasks(Guid projectId)
+        [ProducesResponseType(typeof(IEnumerable<TaskItem>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetTasks(
+        [FromRoute] Guid projectId,
+        [FromQuery] Entities.TaskStatus? status) 
         {
-            try
-            {
-                var tasks = await _taskService.GetTasksByProjectIdAsync(projectId);
+            var tasks = await _taskService.GetTasksByProjectIdAsync(projectId, status);
 
-                if (tasks == null)
+            if (tasks == null)
+            {
+                return NotFound(new ProblemDetails
                 {
-                    return NotFound(new { message = $"Project with ID {projectId} not found." });
-                }
+                    Status = StatusCodes.Status404NotFound,
+                    Title = "Resource not found",
+                    Detail = $"Project with ID {projectId} was not found.",
+                    Instance = HttpContext.Request.Path
+                });
+            }
 
-                return Ok(tasks);
-            }
-            catch (ApplicationException ex) 
-            {
-                return StatusCode(502, new { message = ex.Message });
-            }
+            return Ok(tasks);
         }
 
         [HttpGet("{taskId}")]

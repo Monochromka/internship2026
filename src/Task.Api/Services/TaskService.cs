@@ -68,7 +68,7 @@ namespace Tasks.Api.Services
 
 
 
-        public async Task<List<TaskItem>?> GetTasksByProjectIdAsync(Guid projectId)
+        public async Task<List<TaskItem>?> GetTasksByProjectIdAsync(Guid projectId, Entities.TaskStatus? status = null)
         {
             var project = await _projectsClient.GetProjectAsync(projectId);
             if (project == null)
@@ -79,12 +79,18 @@ namespace Tasks.Api.Services
                 return null;
             }
 
-            var tasks = await _context.Tasks
-                .Where(t => t.ProjectId == projectId)
+            var query = _context.Tasks.Where(t => t.ProjectId == projectId);
+
+            if (status.HasValue)
+            {
+                query = query.Where(t => t.Status == status.Value);
+            }
+
+            var tasks = await query
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
 
-                 return tasks;
+            return tasks;
         }
         public async Task<TaskItem?> GetTaskByIdAsync(Guid projectId, Guid taskId)
         {
@@ -185,6 +191,8 @@ namespace Tasks.Api.Services
 
             return true;
         }
+
+       
     }
 
 }

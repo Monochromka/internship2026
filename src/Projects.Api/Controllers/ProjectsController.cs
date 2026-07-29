@@ -1,5 +1,4 @@
-﻿using Azure.Core;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Projects.Api.Data;
 using Projects.Api.Entities;
 using Projects.Api.Models;
@@ -17,8 +16,6 @@ namespace Projects.Api.Controllers
             _projectService = projectService;
         }
 
-
-        // POST api/<ValuesController>
         [HttpPost]
         [ProducesResponseType(typeof(Entities.Project), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
@@ -27,24 +24,28 @@ namespace Projects.Api.Controllers
             var newProject = await _projectService.CreateProjectAsync(request);
 
             return Created($"/api/v1/projects/{newProject.Id}", newProject);
-
         }
 
         [HttpPatch("{id:guid}/archive")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> ArchiveProject(Guid id)
         {
             var project = await _projectService.ArchiveProjectAsync(id);
 
             if (project == null)
             {
-                return NotFound();
+                return NotFound(new ProblemDetails
+                {
+                    Status = StatusCodes.Status404NotFound,
+                    Title = "Resource not found",
+                    Detail = $"Project with ID {id} was not found.",
+                    Instance = HttpContext.Request.Path
+                });
             }
-                
+
             return Ok(project);
         }
-
 
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<Entities.Project>), StatusCodes.Status200OK)]
@@ -55,31 +56,37 @@ namespace Projects.Api.Controllers
             return Ok(projects);
         }
 
-
-        [HttpGet("{id:guid}")]        
+        [HttpGet("{id:guid}")]
         [ProducesResponseType(typeof(Entities.Project), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetProjectById([FromRoute] Guid id)
         {
             var project = await _projectService.GetProjectByIdAsync(id);
+
             if (project == null)
             {
-                return NotFound();
+                return NotFound(new ProblemDetails
+                {
+                    Status = StatusCodes.Status404NotFound,
+                    Title = "Resource not found",
+                    Detail = $"Project with ID {id} was not found.",
+                    Instance = HttpContext.Request.Path
+                });
             }
+
             return Ok(project);
         }
 
-
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(Project), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
         public async Task<IActionResult> UpdateProject(Guid id, [FromBody] UpdateProjectDto request)
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return ValidationProblem(ModelState);
             }
 
             try
@@ -88,14 +95,26 @@ namespace Projects.Api.Controllers
 
                 if (updatedProject == null)
                 {
-                    return NotFound();
+                    return NotFound(new ProblemDetails
+                    {
+                        Status = StatusCodes.Status404NotFound,
+                        Title = "Resource not found",
+                        Detail = $"Project with ID {id} was not found.",
+                        Instance = HttpContext.Request.Path
+                    });
                 }
 
                 return Ok(updatedProject);
             }
             catch (InvalidOperationException ex)
             {
-                return Conflict(new { message = ex.Message });
+                return Conflict(new ProblemDetails
+                {
+                    Status = StatusCodes.Status409Conflict,
+                    Title = "Business rule violation",
+                    Detail = ex.Message, // Сюди потрапить твоє повідомлення "Cannot update an archived project."
+                    Instance = HttpContext.Request.Path
+                });
             }
         }
     }

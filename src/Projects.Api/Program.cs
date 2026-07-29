@@ -30,6 +30,7 @@ builder.Services.AddHealthChecks()
         name: "cosmosdb"
     );
 builder.Logging.AddConsole();
+builder.Services.AddProblemDetails();
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
